@@ -3,10 +3,17 @@ const app = express();
 const cors = require('cors');
 require('dotenv').config();
 const dayjs = require('dayjs');
+const { v4: uuidv4 } = require('uuid');
 const port = process.env.PORT || 8000 ;
 
 
-// app.use(cors(corsOptions));
+const corsOptions = {
+  origin: ['http://localhost:5173', 'http://localhost:5174'],
+  credentials: true,
+  optionSuccessStatus: 200,
+};
+app.use(cors(corsOptions));
+
 
 app.use(express.json());
 
@@ -42,11 +49,11 @@ async function run() {
     // await client.connect();
     //DBcollections
 
-    const reservationCollection = db.collection('reservations')
+    const reservationCollection = client.db('LittleLemon').collection('reservations')
 
 
 
-    app,post('/reservation',async(req,res)=>{
+    app.post('/reservation',async(req,res)=>{
         const {userId,email,phone,date,time,guest} =req.body;
 
         let bookinguserId;
@@ -68,7 +75,7 @@ async function run() {
             guest,
             status:'pending'
         }
-        const result = await reservationCollection.inserOne(newBooking)
+        const result = await reservationCollection.insertOne(newBooking)
 
         res.status(201).json({
             message:"Reservation was successfully created",
@@ -95,7 +102,7 @@ async function run() {
         const availableDates = []
         for(let i=0; i<14; i++) {
             const date = today.add(i,'day')
-            const reservedSlots = reservationCollection.filter(
+            const reservedSlots = reservations.filter(
                 res => res.date === date
             ).map(res=>res.time)
 
