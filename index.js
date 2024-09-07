@@ -85,9 +85,9 @@ async function run() {
 
     })
 
-    app.get('/availble-slots', async (req, res) => {
+    app.get('/available-slots', async (req, res) => {
         const today =dayjs()
-        const twoWeeksLater = today.add(2,"week")
+        const twoWeeksLater = today.add(8,"week")
 
         //find  existing reservations for next 2 weeks
 
@@ -100,8 +100,8 @@ async function run() {
 
         //generate all dates for next 2 weeks
         const availableDates = []
-        for(let i=0; i<14; i++) {
-            const date = today.add(i,'day')
+        for(let i=0; i<56; i++) {
+            const date = today.add(i,'day').format('YYYY-MM-DD')
             const reservedSlots = reservations.filter(
                 res => res.date === date
             ).map(res=>res.time)
