@@ -3,6 +3,7 @@ const app = express();
 const cors = require('cors');
 require('dotenv').config();
 const dayjs = require('dayjs');
+const { ObjectId } = require('mongodb');
 const { v4: uuidv4 } = require('uuid');
 const port = process.env.PORT || 8000 ;
 
@@ -132,6 +133,33 @@ async function run() {
    app.get('/menu',async (req, res) => {
       const items = await menuCollection.find().toArray()
       res.send(items)
+   })
+
+   //route to edit an existing item
+
+   app.put('/edititem/:id', async (req, res) => {
+    try {
+      const {id} = req.params
+      const updatedItem = req.body
+      const result = await menuCollection.updateOne(
+        {_id: new ObjectId(id)},
+        {$set:updatedItem}
+      )
+      res.json(result)
+    } catch (error) {
+      console.log(error)
+    }
+   })
+
+   //Route to delete a menu item
+   app.delete('/deleteitem/:id', async function (req, res) {
+    try {
+      const {id} = req.params
+      const result = await menuCollection.delete({_id: new ObjectId(id)})
+      res.json(result)
+    } catch (error) {
+      console.log(error)
+    }
    })
 
     // *******************************User related API*******************************
