@@ -63,7 +63,7 @@ async function run() {
         let bookinguserId;
 
         if(!userId){
-            reservationUserId = uuidv4();
+            bookinguserId = uuidv4();
         }else{
             bookinguserId=userId
         }
