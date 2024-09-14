@@ -53,6 +53,7 @@ async function run() {
     const reservationCollection = client.db('LittleLemon').collection('reservations')
     const usersCollection = client.db('LittleLemon').collection('users')
     const menuCollection = client.db('LittleLemon').collection('menu')
+    const orderCollection = client.db('LittleLemon').collection('order')
 
 
 
@@ -122,6 +123,14 @@ async function run() {
         res.json(availableDates)
 
     })
+  // ********************************Cart related API ********************************
+
+  app.post('/confirm-order', async (req, res) => {
+    const order = req.body
+    const result = await orderCollection.insertOne(order)
+    res.json(result)
+  })
+
    // ********************************Admin dashboard related API ********************************
 
    app.post('/menuitem',async (req, res) => {
