@@ -15,7 +15,7 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
-
+var jwt = require('jsonwebtoken');
 app.use(express.json());
 
 
@@ -58,7 +58,7 @@ async function run() {
 
 
     app.post('/reservation',async(req,res)=>{
-        const {userId,email,phone,date,time,guest} =req.body;
+        const {userId,name,email,phone,date,time,guest} =req.body;
 
         let bookinguserId;
 
@@ -72,6 +72,7 @@ async function run() {
 
         const newBooking={
             userId:bookinguserId,
+            name,
             email,
             phone,
             date,
@@ -144,6 +145,18 @@ async function run() {
       res.send(items)
    })
 
+     //Route to delete a menu item
+       //Route to delete a menu item
+   app.delete('/deletereservation/:id', async function (req, res) {
+    try {
+      const {id} = req.params
+      const result = await reservationCollection.deleteOne({_id: new ObjectId(id)})
+      res.json(result)
+    } catch (error) {
+      console.log(error)
+    }
+   })
+
    //route to edit an existing item
 
    app.put('/edititem/:id', async (req, res) => {
@@ -163,13 +176,44 @@ async function run() {
    //Route to delete a menu item
    app.delete('/deleteitem/:id', async function (req, res) {
     try {
-      const {id} = req.params
-      const result = await menuCollection.delete({_id: new ObjectId(id)})
+      const id = req.params.id
+      const result = await menuCollection.deleteOne({_id: new ObjectId(id)})
       res.json(result)
     } catch (error) {
       console.log(error)
     }
    })
+
+   app.get('/reservation-request', async (req, res) => {
+    const reservations =  await reservationCollection.find().toArray()
+    res.send(reservations)
+   })
+
+   app.patch('/update-reservation-status', async (req, res) =>{
+    const {_id,status} = req.body
+    console.log(_id)
+    const query ={_id: new ObjectId(_id)}
+    const update ={$set:{status:status}}
+    const result = await reservationCollection.updateOne(query,update)
+
+    res.send(result)
+   })
+
+    // ******************************* JWT related API*******************************
+
+    app.post('/jwt', async (req, res) =>{
+      const email=req.body
+
+      const token = jwt.sign(email,process.env.ACCESS_TOKEN_SECRET,{expiresIn:3600})
+
+      res.send({success:true})
+      res.cookie('token', token,{
+        httpOnly: true,
+        sameSite:false,
+        secure:false
+      })
+    })
+
 
     // *******************************User related API*******************************
 
@@ -183,6 +227,11 @@ async function run() {
 
       const result = await usersCollection.insertOne(user)
       res.send(result)
+    })
+
+    app.get('/users',async (req, res) => {
+      const users = await usersCollection.find().toArray()
+      res.send(users)
     })
 
     // Send a ping to confirm a successful connection
