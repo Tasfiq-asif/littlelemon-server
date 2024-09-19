@@ -1,10 +1,12 @@
 const express = require('express');
-const app = express();
 const cors = require('cors');
+var jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser');
 require('dotenv').config();
 const dayjs = require('dayjs');
 const { ObjectId } = require('mongodb');
 const { v4: uuidv4 } = require('uuid');
+const app = express();
 const port = process.env.PORT || 8000 ;
 
 
@@ -13,10 +15,38 @@ const corsOptions = {
   credentials: true,
   optionsSuccessStatus: 200,
 };
-app.use(cors(corsOptions));
 
-var jwt = require('jsonwebtoken');
+// ********************************Middlewares ********************************
+app.use(cors(corsOptions));
 app.use(express.json());
+app.use(cookieParser());
+
+const verifytoken = (req, res, next) => {
+  const token = req?.cookies?.token
+  if(!token){
+    return res.status(401).send({message: 'unAuthorize Access'})
+  }
+  jwt.verify(token,process.env.ACCESS_TOKEN_SECRET, (err,decoded)=>{
+   if(err){
+    return res.status(401).send({message:'unauthorized'})
+   }
+    req.user=decoded
+
+    next()
+  })
+}
+
+const verifyAdmin = async (req, res,next) => {
+  const email = req.user.email
+  const user = await usersCollection.findOne({ email: email})
+
+  if (user.role !== 'admin') {
+    res.send({message: "not admin"})
+  }else{
+    res.send({message: "admin"})
+  }
+  next()
+}
 
 
 const { MongoClient, ServerApiVersion } = require('mongodb');
@@ -56,6 +86,19 @@ async function run() {
     const orderCollection = client.db('LittleLemon').collection('order')
 
 
+    const verifyAdmin = async (req, res, next) => {
+        const email = req.user.email;
+        const user = await usersCollection.findOne({ email: email });
+
+        if (!user || user.role !== 'admin') {
+          return res.status(403).send({ message: "Access denied. Admins only." });
+        }
+
+        // If the user is an admin, proceed to the next middleware
+        next();
+      };
+
+    // ********************************Reservations related API ********************************
 
     app.post('/reservation',async(req,res)=>{
         const {userId,name,email,phone,date,time,guest} =req.body;
@@ -134,7 +177,7 @@ async function run() {
 
    // ********************************Admin dashboard related API ********************************
 
-   app.post('/menuitem',async (req, res) => {
+   app.post('/menuitem',verifytoken,async (req, res) => {
     const item = req.body
     const result =  await menuCollection.insertOne(item)
     res.send(result)
@@ -184,8 +227,10 @@ async function run() {
     }
    })
 
-   app.get('/reservation-request', async (req, res) => {
+   app.get('/reservation-request',verifytoken,verifyAdmin, async (req, res) => {
     const reservations =  await reservationCollection.find().toArray()
+    console.log("cookies",req.cookies)
+    console.log("cookies",req.user.email)
     res.send(reservations)
    })
 
@@ -206,13 +251,29 @@ async function run() {
 
       const token = jwt.sign(email,process.env.ACCESS_TOKEN_SECRET,{expiresIn:3600})
 
-      res.send({success:true})
       res.cookie('token', token,{
         httpOnly: true,
         sameSite:false,
-        secure:false
+        secure:process.env.NODE_ENV === 'production',
       })
+      res.send({success:true})
     })
+
+
+    app.get('/logout', (req, res) => {
+      try {
+        res
+          .clearCookie('token', {
+            httpOnly: true, // To match how the cookie was set initially
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
+          })
+          .send({ success: true });
+      } catch (err) {
+        res.status(500).send({ success: false, error: err.message });
+      }
+    });
+
 
 
     // *******************************User related API*******************************
