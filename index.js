@@ -251,7 +251,17 @@ async function run() {
     const email = req.params.email
 
     try {
-       const result = await reservationCollection.findOne({ email: email})
+       const result = await reservationCollection.find({ email: email}).toArray();
+       res.send(result)
+    } catch (error) {
+      res.send(error)
+    }
+   })
+
+   app.get('/orderedItems/:email', async (req, res) => {
+    const email = req.params.email
+    try {
+       const result = await orderCollection.find({ userEmail: email}).toArray()
        res.send(result)
     } catch (error) {
       res.send(error)
