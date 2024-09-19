@@ -290,10 +290,21 @@ async function run() {
       res.send(result)
     })
 
+
     app.get('/users',async (req, res) => {
       const users = await usersCollection.find().toArray()
       res.send(users)
     })
+
+    app.get('/users/:email', async (req, res) => {
+      const email = req.params.email
+      const result = await usersCollection.findOne({email})
+      res.send(result)
+    })
+
+
+
+
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
