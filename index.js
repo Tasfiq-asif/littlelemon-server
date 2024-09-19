@@ -177,7 +177,7 @@ async function run() {
 
    // ********************************Admin dashboard related API ********************************
 
-   app.post('/menuitem',verifytoken,async (req, res) => {
+   app.post('/menuitem',verifytoken,verifyAdmin,async (req, res) => {
     const item = req.body
     const result =  await menuCollection.insertOne(item)
     res.send(result)
@@ -190,7 +190,7 @@ async function run() {
 
      //Route to delete a menu item
        //Route to delete a menu item
-   app.delete('/deletereservation/:id', async function (req, res) {
+   app.delete('/deletereservation/:id',verifytoken, async function (req, res) {
     try {
       const {id} = req.params
       const result = await reservationCollection.deleteOne({_id: new ObjectId(id)})
@@ -202,7 +202,7 @@ async function run() {
 
    //route to edit an existing item
 
-   app.put('/edititem/:id', async (req, res) => {
+   app.put('/edititem/:id',verifytoken,verifyAdmin, async (req, res) => {
     try {
       const {id} = req.params
       const updatedItem = req.body
@@ -217,7 +217,7 @@ async function run() {
    })
 
    //Route to delete a menu item
-   app.delete('/deleteitem/:id', async function (req, res) {
+   app.delete('/deleteitem/:id',verifytoken,verifyAdmin, async function (req, res) {
     try {
       const id = req.params.id
       const result = await menuCollection.deleteOne({_id: new ObjectId(id)})
@@ -234,7 +234,7 @@ async function run() {
     res.send(reservations)
    })
 
-   app.patch('/update-reservation-status', async (req, res) =>{
+   app.patch('/update-reservation-status',verifytoken,verifyAdmin, async (req, res) =>{
     const {_id,status} = req.body
     console.log(_id)
     const query ={_id: new ObjectId(_id)}
@@ -242,6 +242,20 @@ async function run() {
     const result = await reservationCollection.updateOne(query,update)
 
     res.send(result)
+   })
+
+
+   // ******************************* user Dashboard related API*******************************
+
+   app.get('/reservation/:email',verifytoken,async (req, res) => {
+    const email = req.params.email
+
+    try {
+       const result = await reservationCollection.findOne({ email: email})
+       res.send(result)
+    } catch (error) {
+      res.send(error)
+    }
    })
 
     // ******************************* JWT related API*******************************
