@@ -11,9 +11,11 @@ const port = process.env.PORT || 8000 ;
 
 
 const corsOptions = {
-  origin: ['http://localhost:5173', 'http://localhost:5174','https://littlelemon-6efed.web.app','https://littlelemon-6efed.firebaseapp.com'],
+  origin: ['http://localhost:5173', 'http://localhost:5174','https://littlelemon-6efed.web.app','https://littlelemon-6efed.firebaseapp.com', 'https://little-lemon-server.vercel.app'],
   credentials: true,
-  optionsSuccessStatus: 200,
+  optionSuccessStatus: 200,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
 };
 
 // ********************************Middlewares ********************************
@@ -286,13 +288,18 @@ async function run() {
 
     app.get('/logout', (req, res) => {
       try {
-        res
-          .clearCookie('token', {
-            httpOnly: true, // To match how the cookie was set initially
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
-          })
-          .send({ success: true });
+        res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+        
+        res.clearCookie('token', {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
+          domain: process.env.NODE_ENV === 'production' ? '.vercel.app' : 'localhost'
+        })
+        .send({ success: true });
       } catch (err) {
         res.status(500).send({ success: false, error: err.message });
       }
